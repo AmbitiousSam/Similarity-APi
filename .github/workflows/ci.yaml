@@ -1,0 +1,61 @@
+name: CDK-CI/CD - Staging
+
+on:
+  # # Triggers the workflow on push or pull request events
+#   push:
+#     branches: ["master"]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+      confirm_deploy:
+        description: 'Enter "yes" to confirm deployment'
+        required: true    
+
+# CDK ENV
+
+env:
+  AWS_ACCOUNT_ID: 123456789101
+  AWS_REGION: us-east-2
+  ECR_REPOSITORY: projectapp
+  IMAGE_TAG: ${{ github.sha }}
+  ROLE_NAME: github-role
+
+jobs:
+  login-to-aws:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/${{ env.ROLE_NAME }}
+          role-session-name: GitHub-Action-Role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+
+  build-and-push-to-ecr:
+    needs: login-to-aws
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+          build-args: |
+            NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
+            NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+            DB_NAME=${{ secrets.DB_NAME }}
+            MONGODB_URI=${{ secrets.MONGODB_URI }}
