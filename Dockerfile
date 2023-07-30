@@ -1,5 +1,5 @@
 # Start from the official Node.js LTS release
-FROM node:lts
+FROM node:18.13.0
 
 # Set the working directory
 WORKDIR /usr/src/app
