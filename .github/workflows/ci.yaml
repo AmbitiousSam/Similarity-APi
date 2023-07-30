@@ -47,16 +47,25 @@ jobs:
         uses: actions/checkout@v2
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
+        env:
+            NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+            NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+            OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+            GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+            DATABASE_URL: ${{ secrets.DATABASE_URL }}
+            REDIS_SECRET: ${{ secrets.REDIS_SECRET }}
+            REDIS_URL: ${{ secrets.REDIS_URL }}
         with:
           context: .
           push: true
           tags: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
           build-args: |
-            NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
-            NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}
-            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
-            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-            DATABASE_URL=${{ secrets.DATABASE_URL }}
-            REDIS_SECRET=${{ secrets.REDIS_SECRET }}
-            REDIS_URL=${{ secrets.REDIS_URL }}
+            NEXTAUTH_SECRET=${{ env.NEXTAUTH_SECRET }}
+            NEXTAUTH_URL=${{ env.NEXTAUTH_URL }}
+            OPENAI_API_KEY=${{ env.OPENAI_API_KEY }}
+            GOOGLE_CLIENT_ID=${{ env.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ env.GOOGLE_CLIENT_SECRET }}
+            DATABASE_URL=${{ env.DATABASE_URL }}
+            REDIS_SECRET=${{ env.REDIS_SECRET }}
+            REDIS_URL=${{ env.REDIS_URL }}
