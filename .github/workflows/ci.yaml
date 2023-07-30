@@ -2,15 +2,15 @@ name: CDK-CI/CD
 
 on:
   # # Triggers the workflow on push or pull request events
-#   push:
-#     branches: ["master"]
+  push:
+    branches: ["master"]
 
   # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-    inputs:
-      confirm_deploy:
-        description: 'Enter "yes" to confirm deployment'
-        required: true    
+#   workflow_dispatch:
+#     inputs:
+#       confirm_deploy:
+#         description: 'Enter "yes" to confirm deployment'
+#         required: true    
 
 env:
   AWS_ACCOUNT_ID: 716488812662
@@ -45,18 +45,23 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          push: true
-          tags: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
-          build-args: |
-            NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
-            NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}
-            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
-            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-            DATABASE_URL=${{ secrets.DATABASE_URL }}
-            REDIS_SECRET=${{ secrets.REDIS_SECRET }}
-            REDIS_URL=${{ secrets.REDIS_URL }}
-            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+
+      - name: Build, tag, and push the image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{env.AWS_REGION}}.amazonaws.com
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          # Build a docker container and
+          # push it to ECR so that it can
+          # be deployed to ECS.
+          docker build --build-arg NEXTAUTH_SECRET=${{secrets.NEXTAUTH_SECRET}}  \
+          --build-arg NEXTAUTH_URL=${{secrets.NEXTAUTH_URL}} \
+          --build-arg GOOGLE_CLIENT_ID=${{secrets.GOOGLE_CLIENT_ID}} \
+          --build-arg GOOGLE_CLIENT_SECRET=${{secrets.GOOGLE_CLIENT_SECRET}} \
+          --build-arg DATABASE_URL=${{secrets.DATABASE_URL}} \
+          --build-arg OPENAI_API_KEY=${{secrets.OPENAI_API_KEY}} \
+          --build-arg REDIS_URL=${{secrets.REDIS_URL}} \
+          --build-arg REDIS_SECRET=${{secrets.REDIS_SECRET}} -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG . --load
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
